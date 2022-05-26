@@ -151,6 +151,7 @@ class DI:
             else:
                 vals[k] = i32(self.mem,off)
             self.__dict__[k] = vals[k]
+        self.props = vals
         self.memfile.seek(self.ChessArrayPointer)
         self.boardsMem = self.memfile.read(boardSize*self.ChessArraySize)
         boards = []
@@ -159,61 +160,6 @@ class DI:
             #offset = i*boardSize
             boards.append(Board(self.boardsMem, i*boardSize, self.ChessBoardSizeWidth, self.ChessBoardSizeHeight))
         self.boards = boards
-    def makePGN(self):
-        def mkL(l):
-            if self.EvenTimelines==0:
-                return str(l)
-            elif l>=0:
-                return f"+{l}"
-            elif l==-1:
-                return "-0"
-            else:
-                return str(l+1)
-        mkT = lambda t : str(t+self.CosmeticTurnOffset)
-        mkLT = lambda l,t: f"({mkL(l)}T{mkT(t)})"
-
-        pgn = "\n".join([
-            '[Board "custom"]'
-          , '[Mode "5D"]'
-          , f'[Size "{self.ChessBoardSizeWidth}x{self.ChessBoardSizeHeight}"]'
-          , ''])
-        if self.WhoAmI2==1:
-            pgn+='\n[White "Opponent"]'
-        elif self.WhoAmI2==0:
-            pgn+='\n[Black "Opponent"]'
-        #fen=""
-        lastCol = ""
-        turnNumber = 0;
-        for i,b1 in enumerate(self.boards):
-            assert i == b1.boardId
-            if b1.previousBoardId==-1:
-                pgn+="\n"+b1.toFEN(mkL(b1.timeline),mkT(b1.turn))
-                continue
-            b = self.boards[b1.previousBoardId]
-            if (all( b.props["move"+k+c]<=0 for k in ["Source","Dest"] for c in "LTXY")
-              and b.moveNumber in {b1.creatingMoveNumber,-1}):
-                pgn+="\n"+b1.toFEN(mkL(b1.timeline),mkT(b1.turn))
-                continue
-            c = "b" if b.isBlacksMove else "w"
-            if c!=lastCol:
-                lastCol = c
-                if c=="b":
-                    pgn+="/ "
-                else:
-                    turnNumber+=1
-                    #if turnNumber==1:
-                        #pgn+=fen
-                    pgn+=f"\n{turnNumber}."
-            moveType = ""
-            if i+1<len(self.boards):
-                b2 = self.boards[i+1]
-                if b2.creatingMoveNumber == b1.creatingMoveNumber:
-                    moveType = ">" if b2.timeline==b.moveDestL else ">>"
-            piece = b.positionData128
-            src = f"{mkLT(b.moveSourceL,b.moveSourceT)}{chr(97+b.moveSourceX)}{b.moveSourceY+1}"
-            dest = f"{mkLT(b.moveDestL,b.moveDestT)}{chr(97+b.moveDestX)}{b.moveDestY+1}"
-            pgn += src+moveType+dest+" "
-        return pgn
 
     def pr(self):
         for k in DIoffsets:
