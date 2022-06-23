@@ -135,8 +135,10 @@ class DI:
             return "EndedDraw"
         else:
             return "Unknown"
-
-
+    def curT(self):
+        return (self.BlackTime+self.BlackIncrement
+                  if self.CurrentPlayersTurn else
+                self.WhiteTime+self.WhiteIncrement)
     def isOver(self):
         return self.getState().startswith("Ended")
     def reread(self):

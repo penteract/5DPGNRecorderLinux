@@ -4,6 +4,7 @@ import re
 import sys
 import time
 import datetime
+import os
 
 import memlayout
 
@@ -108,11 +109,20 @@ class GameRecorder(memlayout.DI):
         elif r=="EndedWhiteWon": return "1-0"
         elif r=="EndedBlackWon": return "0-1"
         else: return "error"
+    def getHash(self):
+        """return a collection of data that should change if anything happens"""
+        return (self.ChessArraySize,self.CurrentPlayersTurn,self.GameState)
+
 
 usage = """python3 recordgame.py [-h] [--help] [NAME]
 
-Find a running 5D chess with multiverse timetravel game and repeatedly inspect its
-"""
+Find a running 5D chess with multiverse timetravel game and build PGN as
+games are played. PGNs will be saved automatically when games finish.
+NAME lets the program record which player is you as part of the PGN.
+
+The Time tag includes the offset of your timezone from UTC, so if you consider
+that information confidential, don't share the PGN without editing or removing
+it."""
 
 if __name__=="__main__":
     if any(x in sys.argv[1:] for x in ["-h","--help"]):
@@ -121,9 +131,9 @@ if __name__=="__main__":
     res = subprocess.run("ps -A | grep 5dchess", capture_output=True, shell=True)
     assert res.returncode==0
     s = str(res.stdout,encoding="ascii")
-    if s.count("\n")==0:
+    if s.count("\n") == 0:
         raise Exception("Can't find any 5D chess processes")
-    if s.count("\n")>1:
+    if s.count("\n") > 1:
         raise Exception("More than 1 5D chess process")
     pid = s.split()[0]
     print("found process with id",pid)
@@ -133,29 +143,43 @@ if __name__=="__main__":
     prevNumBoards = 0
     saved = False
     lastPGN=""
+    lastHash=None
+    playerName = os.environ.get("CHESSNAME")
+    lastP = None
     try:
         while True:
             gr.reread()
             numBoards = gr.ChessArraySize
             if numBoards>0:
-                pgn = gr.makePGN()
-                if pgn != lastPGN: print("\n"+pgn)
-                lastPGN=pgn
-                if gr.isOver() and not saved:
-                    save(pgn)
-                    saved=True
+                changes = gr.getHash()
+                if changes!=lastHash:
+                    lastHash=changes
+                    pgn = gr.makePGN(playerName=playerName)
+                    if pgn != lastPGN: print("\n"+pgn)
+                    lastPGN=pgn
+                    if gr.isOver() and not saved:
+                        save(pgn)
+                        saved=True
+                curTime = gr.curT()
+                if gr.CurrentPlayersTurn!=lastP:
+                    lastP=gr.CurrentPlayersTurn
+                    lastTime = curTime
+                if (curTime-1)*3<=(lastTime-1)*2:
+                    os.system("aplay Tick.wav &")
+                    lastTime = curTime
             else:
                 if not saved and prevNumBoards>4:
                     save(pgn)
                 if prevNumBoards>0:
                     print("\nNo chessboards")
-                saved=False
+                saved = False
+                lastPGN = ""
             prevNumBoards = numBoards
             for k in []:#["WhoAmI","WhoAmI2", "GameState"]:
                 print(k,gr.props[k])
             time.sleep(1)
     except BaseException as e:
-        if lastPGN:
+        if lastPGN and not saved and prevNumBoards>0:
             print("emergency save")
             save(lastPGN)
         raise e
