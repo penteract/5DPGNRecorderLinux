@@ -35,7 +35,7 @@ def save(pgn):
         print("output saved to",fname)
 def pgnEscape(s):
     return "".join(map((lambda c:"\\"+c if c in '\\"' else c),s))
-
+    
 class GameRecorder(memlayout.DI):
     def makePGN(self,playerName=None):
         def mkL(l):
@@ -119,6 +119,8 @@ usage = """python3 recordgame.py [-h] [--help] [NAME]
 Find a running 5D chess with multiverse timetravel game and build PGN as
 games are played. PGNs will be saved automatically when games finish.
 NAME lets the program record which player is you as part of the PGN.
+if NAME is not given and the environment variable CHESSNAME is set, that
+will be used.
 
 The Time tag includes the offset of your timezone from UTC, so if you consider
 that information confidential, don't share the PGN without editing or removing
@@ -128,6 +130,10 @@ if __name__=="__main__":
     if any(x in sys.argv[1:] for x in ["-h","--help"]):
         print(usage)
         exit()
+    if len(sys.argv)>1:
+        playerName = sys.argv[1]
+    else:
+        playerName = os.environ.get("CHESSNAME")
     res = subprocess.run("ps -A | grep 5dchess", capture_output=True, shell=True)
     assert res.returncode==0
     s = str(res.stdout,encoding="ascii")
@@ -144,7 +150,6 @@ if __name__=="__main__":
     saved = False
     lastPGN=""
     lastHash=None
-    playerName = os.environ.get("CHESSNAME")
     lastP = None
     try:
         while True:
