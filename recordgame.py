@@ -96,7 +96,7 @@ class GameRecorder(memlayout.DI):
                 if b2.creatingMoveNumber == b1.creatingMoveNumber:
                     moveType = ">" if b2.timeline==b.moveDestL else ">>"
             piece = b.positionData128
-            src = (mkLT(b.moveSourceL,b.moveSourceT)+b.getAt(b.moveSourceL,b.moveSourceT)
+            src = (mkLT(b.moveSourceL,b.moveSourceT)+b.getAt(b.moveSourceX,b.moveSourceY)
               + chr(97+b.moveSourceX)+str(b.moveSourceY+1))
             dest = mkLT(b.moveDestL,b.moveDestT)+chr(97+b.moveDestX)+str(b.moveDestY+1)
             pgn += src+moveType+dest+" "

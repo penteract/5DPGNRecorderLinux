@@ -102,6 +102,8 @@ class Board():
             b=b.replace(" "*i,str(i))
         return f"[{b}:{l}:{t}:{'w' if self.isBlacksMove else 'b'}]"
     def getAt(self,x,y):
+        if x<0 or y<0 or x>7 or y>7:
+            raise Exception("outside Board")
         return pieces.ps[self.positionData128[x*16+y*2]]
     def getAtCase(self,x,y):
         col = self.positionData128[x*16+y*2+1]
