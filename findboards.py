@@ -15,7 +15,7 @@ def get_mem(pid):
     with open("/proc/"+pid+"/maps",mode="rb") as mapsfile:
         with open("/proc/"+pid+"/mem",mode="rb") as memfile:
             for l in mapsfile.readlines():
-                m = re.match(rb'([0-9A-Fa-f]+)-([0-9A-Fa-f]+) ([^ ]+) ([0-9A-Fa-f]+) (..:..) ([^ ]+) +([^ ]+)', l)
+                m = re.match(rb'([0-9A-Fa-f]+)-([0-9A-Fa-f]+) ([^ ]+) ([0-9A-Fa-f]+) ([0-9A-Fa-f]+:[0-9A-Fa-f]+) ([^ ]+) +([^ ]+)', l)
                 #print(m.group(3),m.group(1),m.group(2),m.group(7))
                 name = str(m.group(7),encoding="ascii")
                 if b"r" not in m.group(3) or name.startswith("/usr/"):

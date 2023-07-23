@@ -15,7 +15,7 @@ def get_mem(pid):
     names = {}
     with open("/proc/"+pid+"/maps",mode="rb") as mapsfile:
         for l in mapsfile.readlines():
-            m = re.match(rb'([0-9A-Fa-f]+)-([0-9A-Fa-f]+) ([^ ]+) ([0-9A-Fa-f]+) (..:..) ([^ ]+) +([^ ]+)', l)
+            m = re.match(rb'([0-9A-Fa-f]+)-([0-9A-Fa-f]+) ([^ ]+) ([0-9A-Fa-f]+) ([0-9A-Fa-f]+:[0-9A-Fa-f]+) ([^ ]+) +([^ ]+)', l)
             if m.group(5)==b"00:00" and m.group(7)==b"\n":
                 #print(m.group(0).decode("ascii"))
                 break
@@ -47,7 +47,7 @@ class GameRecorder(memlayout.DI):
                 return "-0"
             else:
                 return str(l+1)
-        mkT = lambda t : str(t+self.CosmeticTurnOffset)
+        mkT = lambda t : str(t+self.CosmeticTurnOffset+1)
         mkLT = lambda l,t: f"({mkL(l)}T{mkT(t)})"
         now = datetime.datetime.now(datetime.timezone.utc).astimezone()
         tz = now.strftime("%z")
@@ -70,7 +70,11 @@ class GameRecorder(memlayout.DI):
         pgn = "\n".join(f'[{k} "{pgnEscape(v)}"]' for k,v in tags.items() if v is not None)
         lastCol = ""
         turnNumber = 0
+        skipNext=False
         for i,b1 in enumerate(self.boards):
+            if skipNext:
+                skipNext=False
+                continue
             assert i == b1.boardId
             if b1.previousBoardId==-1:
                 pgn+="\n"+b1.toFEN(mkL(b1.timeline),mkT(b1.turn))
@@ -95,6 +99,7 @@ class GameRecorder(memlayout.DI):
                 b2 = self.boards[i+1]
                 if b2.creatingMoveNumber == b1.creatingMoveNumber:
                     moveType = ">" if b2.timeline==b.moveDestL else ">>"
+                    skipNext=True
             piece = b.positionData128
             src = (mkLT(b.moveSourceL,b.moveSourceT)+b.getAt(b.moveSourceX,b.moveSourceY)
               + chr(97+b.moveSourceX)+str(b.moveSourceY+1))
