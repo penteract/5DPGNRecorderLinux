@@ -70,7 +70,8 @@ DIoffsets = {
     "EvenTimelines" : -0x34, # 0 if odd number of starting timelines, -1 if even
     "WhoAmI" : -0x610,
     "WhoAmI2" : -0x44,
-    "Perspective" : -0x40
+    "Perspective" : -0x40,
+    "CurrentMoveIndexForUndo":0x150 # decrementing this allows undoing submitted moves (in single player)
 }
 minOffset = min(DIoffsets.values())
 maxOffset = max(DIoffsets.values())
@@ -144,6 +145,7 @@ class DI:
     def isOver(self):
         return self.getState().startswith("Ended")
     def reread(self):
+        print(self.blockStart)
         self.memfile.seek(self.blockStart + boardsPointerOffset + minOffset)
         self.mem = self.memfile.read(maxOffset+8-minOffset)
         vals = {}

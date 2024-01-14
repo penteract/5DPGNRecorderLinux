@@ -24,7 +24,7 @@ def get_mem(pid):
         blockstart = int(m.group(1),16)
         blockend = int(m.group(2),16)
         print(f"Found memory block {hex(blockstart)}-{hex(blockend)}")
-        assert blockend-blockstart == 24<<10
+        #assert blockend-blockstart == 24<<10
     memfile = open("/proc/"+pid+"/mem",mode="rb")
     return (memfile,blockstart)
 
@@ -119,10 +119,15 @@ class GameRecorder(memlayout.DI):
         return (self.ChessArraySize,self.CurrentPlayersTurn,self.GameState)
 
 
-usage = """python3 recordgame.py [-h] [--help] [NAME]
+usage = """python3 recordgame.py [-h] [--help] [--name NAME] [EXECUTABLE]
 
 Find a running 5D chess with multiverse timetravel game and build PGN as
 games are played. PGNs will be saved automatically when games finish.
+
+The filepath of a 5dchesswithmultiversetimetravel EXECUTABLE may be given
+- if so, it will be started and used rather than trying to find a running
+game.
+
 NAME lets the program record which player is you as part of the PGN.
 if NAME is not given and the environment variable CHESSNAME is set, that
 will be used.
@@ -135,20 +140,42 @@ if __name__=="__main__":
     if any(x in sys.argv[1:] for x in ["-h","--help"]):
         print(usage)
         exit()
-    if len(sys.argv)>1:
+    if "--name" in sys.argv[1:]:
+        i = sys.argv[1:].index("--name")
+        names = sys.argv[i+1:i+3]
+        sys.argv[i+1:i+3] = []
+        if len(names)<2:
+            print("no NAME found - usage:\npython3 recordgame.py [-h] [--help] [--name NAME] [EXECUTABLE]",file=sys.stderr)
+            exit(1)
         playerName = sys.argv[1]
     else:
         playerName = os.environ.get("CHESSNAME")
-    res = subprocess.run("ps -A | grep 5dchess", capture_output=True, shell=True)
-    assert res.returncode==0
-    s = str(res.stdout,encoding="ascii")
-    if s.count("\n") == 0:
-        raise Exception("Can't find any 5D chess processes")
-    if s.count("\n") > 1:
-        raise Exception("More than 1 5D chess process")
-    pid = s.split()[0]
-    print("found process with id",pid)
-    gr = GameRecorder(*get_mem(pid))
+    proc=None
+    if len(sys.argv)>2:
+        print("unrecognised argument - usage:\npython3 recordgame.py [-h] [--help] [--name NAME] [EXECUTABLE]")
+        exit(1)
+    elif len(sys.argv)==2:
+        executable = sys.argv[1]
+        proc = subprocess.Popen(executable)
+        pid=str(proc.pid)
+        print("created process with id",pid)
+        time.sleep(1)
+        gr = GameRecorder(*get_mem(pid))
+    else:
+        res = subprocess.run("ps -A | grep 5dchess", capture_output=True, shell=True)
+        assert res.returncode==0
+        s = str(res.stdout,encoding="ascii")
+        if s.count("\n") == 0:
+            raise Exception("Can't find any 5D chess processes")
+        if s.count("\n") > 1:
+            raise Exception("More than 1 5D chess process")
+        pid = s.split()[0]
+        print("found process with id",pid)
+        try:
+            gr = GameRecorder(*get_mem(pid))
+        except PermissionError as e:
+            print("can't read process memory, try running something like 'python3 recordgame.py ~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/5dchesswithmultiversetimetravel/5dchesswithmultiversetimetravel'", file=sys.stderr)
+            raise e
 
     #main loop:
     prevNumBoards = 0
@@ -160,6 +187,12 @@ if __name__=="__main__":
         while True:
             gr.reread()
             numBoards = gr.ChessArraySize
+            if not os.path.exists("/proc/"+pid):
+                print("game no longer running")
+                if lastPGN and not saved and prevNumBoards>0:
+                    save(lastPGN)
+                    saved=True
+                exit()
             if numBoards>0:
                 changes = gr.getHash()
                 if changes!=lastHash:
@@ -177,7 +210,7 @@ if __name__=="__main__":
                 if (curTime-1)*3<=(lastTime-1)*2:
                     os.system("aplay Tick.wav &")
                     lastTime = curTime
-            else:
+            else:# if a new game starts in less than a second, this might not run when it should
                 if not saved and prevNumBoards>4:
                     save(pgn)
                 if prevNumBoards>0:
@@ -188,6 +221,9 @@ if __name__=="__main__":
             for k in []:#["WhoAmI","WhoAmI2", "GameState"]:
                 print(k,gr.props[k])
             time.sleep(1)
+            if proc and (proc.poll() is not None):
+                proc.wait()
+            #print(open(""))
     except BaseException as e:
         if lastPGN and not saved and prevNumBoards>0:
             print("emergency save")

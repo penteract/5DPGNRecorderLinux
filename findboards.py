@@ -65,14 +65,19 @@ for k in boards:
     print(pieces.prg(k[1].group(0),"/"))
     prev = offset
 
-#
-addr = boards[0][0]+boards[0][1].start()-16
-print("offset address of chessboard array", hex(addr))
-addrAsBytes = (addr).to_bytes(8,"little")
+#addr = boards[0][0]+boards[0][1].start()-16
+for b in boards:
+    print(b)
+    print(hex(b[0]),hex(b[1].start()))
+    
+    addr = b[0]+b[1].start()-16
+    print("offset address of chessboard array", hex(addr))
+    addrAsBytes = (addr).to_bytes(8,"little")
 
-ptrs = search(re.escape(addrAsBytes))
-print("number of pointers to chessboard array found:",len(ptrs))
-print("offset of first pointer (should match boardsPointerOffset in memlayout.py)", hex(ptrs[0][1].start()))
+    ptrs = search(re.escape(addrAsBytes))
+    print("number of pointers to chessboard array found:",len(ptrs))
+    if len(ptrs)>0:
+        print("offset of first pointer (should match boardsPointerOffset in memlayout.py)", hex(ptrs[0][1].start()))
 #print("block of first pointer",hex(ptrs[0][0]))
 
 #cs = counts((x[1].group(0).count(b"\x00"),x[1].group(0).count(b"\x01")) for x in r)
