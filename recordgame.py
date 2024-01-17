@@ -13,12 +13,14 @@ def get_mem(pid):
     """Get memory file and location of "the right" block of memory"""
     result = {}
     names = {}
+    #According to https://stackoverflow.com/a/3566080, the bss segment is immediately before the heap, and bss is the one we want
+    m=None
     with open("/proc/"+pid+"/maps",mode="rb") as mapsfile:
         for l in mapsfile.readlines():
-            m = re.match(rb'([0-9A-Fa-f]+)-([0-9A-Fa-f]+) ([^ ]+) ([0-9A-Fa-f]+) ([0-9A-Fa-f]+:[0-9A-Fa-f]+) ([^ ]+) +([^ ]+)', l)
-            if m.group(5)==b"00:00" and m.group(7)==b"\n":
-                #print(m.group(0).decode("ascii"))
+            nextm = re.match(rb'([0-9A-Fa-f]+)-([0-9A-Fa-f]+) ([^ ]+) ([0-9A-Fa-f]+) ([0-9A-Fa-f]+:[0-9A-Fa-f]+) ([^ ]+) +([^ ]+)', l)
+            if b"[heap]" in nextm.group(7):
                 break
+            m=nextm
         else:
             raise Exception("Can't find memory block")
         blockstart = int(m.group(1),16)
