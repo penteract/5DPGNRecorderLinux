@@ -178,6 +178,10 @@ if __name__=="__main__":
         except PermissionError as e:
             print("can't read process memory, try running something like 'python3 recordgame.py ~/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/common/5dchesswithmultiversetimetravel/5dchesswithmultiversetimetravel'", file=sys.stderr)
             raise e
+    
+    full_path = os.path.realpath(__file__)
+    path, filename = os.path.split(full_path)
+    sound_path = os.path.join(path, "Tick.wav")
 
     #main loop:
     prevNumBoards = 0
@@ -210,7 +214,7 @@ if __name__=="__main__":
                     lastP=gr.CurrentPlayersTurn
                     lastTime = curTime
                 if (curTime-1)*3<=(lastTime-1)*2:
-                    os.system("aplay Tick.wav &")
+                    os.system(f"aplay '{sound_path}' &")
                     lastTime = curTime
             else:# if a new game starts in less than a second, this might not run when it should
                 if not saved and prevNumBoards>4:
