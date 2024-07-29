@@ -149,7 +149,7 @@ if __name__=="__main__":
         if len(names)<2:
             print("no NAME found - usage:\npython3 recordgame.py [-h] [--help] [--name NAME] [EXECUTABLE]",file=sys.stderr)
             exit(1)
-        playerName = sys.argv[1]
+        playerName = names[1]
     else:
         playerName = os.environ.get("CHESSNAME")
     proc=None
