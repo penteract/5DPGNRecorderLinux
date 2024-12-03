@@ -214,7 +214,7 @@ if __name__=="__main__":
                     lastP=gr.CurrentPlayersTurn
                     lastTime = curTime
                 if (curTime-1)*3<=(lastTime-1)*2:
-                    os.system(f"aplay '{sound_path}' &")
+                    os.system(f"aplay -q '{sound_path}' &")
                     lastTime = curTime
             else:# if a new game starts in less than a second, this might not run when it should
                 if not saved and prevNumBoards>4:
