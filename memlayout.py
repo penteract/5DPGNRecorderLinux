@@ -145,7 +145,7 @@ class DI:
     def isOver(self):
         return self.getState().startswith("Ended")
     def reread(self):
-        print(self.blockStart)
+        #print(self.blockStart)
         self.memfile.seek(self.blockStart + boardsPointerOffset + minOffset)
         self.mem = self.memfile.read(maxOffset+8-minOffset)
         vals = {}
