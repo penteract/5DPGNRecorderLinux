@@ -105,10 +105,10 @@ class GameRecorder(memlayout.DI):
             piece = b.positionData128
             src = (mkLT(b.moveSourceL,b.moveSourceT)+b.getAt(b.moveSourceX,b.moveSourceY)
               + chr(97+b.moveSourceX)+str(b.moveSourceY+1))
-            pgn += src+moveType
+            dest = chr(97+b.moveDestX)+str(b.moveDestY+1)
             if b.moveSourceL != b.moveDestL or b.moveSourceT != b.moveDestT:
-                pgn += mkLT(b.moveDestL,b.moveDestT)
-            pgn += chr(97+b.moveDestX)+str(b.moveDestY+1) + " "
+                dest = mkLT(b.moveDestL,b.moveDestT) + dest
+            pgn += src+moveType+dest+" "
         return pgn
     def resultString(self):
         r = self.getState()
