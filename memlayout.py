@@ -99,7 +99,7 @@ class Board():
             if y<self.height-1: b += "/"
             for x in range(self.width):
                 b+=self.getAtCase(x,y)
-        for i in range(8,1,-1):
+        for i in range(8,0,-1):
             b=b.replace(" "*i,str(i))
         return f"[{b}:{l}:{t}:{'w' if self.isBlacksMove else 'b'}]"
     def getAt(self,x,y):
